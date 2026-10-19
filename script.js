@@ -18,7 +18,7 @@
       initTheme();
     });
 
-    // Theme Toggle Functionality (Dark / Night Mode Switcher)
+    // Theme Toggle Functionality
     function initTheme() {
       const savedTheme = localStorage.getItem('mhtech_theme') || 'dark';
       const htmlEl = document.documentElement;
@@ -50,23 +50,20 @@
 
     // Switch between navigation tabs
     function switchTab(tabId) {
-      // Manage button styles
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
       if (activeBtn) activeBtn.classList.add('active');
 
-      // Manage visible panels
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       
-      // If switching to database, reset the search input
       if (tabId === 'database-tab') {
         document.getElementById('db-search').value = '';
         filterDatabaseTable();
       }
     }
 
-    // Live Online User Counter Simulator (100 to 1000 range)
+    // Live Online User Counter Simulator
     function initOnlineUserCounter() {
       const onlineCountEl = document.getElementById('online-count');
       if (!onlineCountEl) return;
@@ -91,6 +88,156 @@
         }, 400);
 
       }, 3500);
+    }
+
+    // Helper: Search panicDatabase for matching Error Codes
+    function checkDatabaseMatches(searchTerms) {
+      const matches = [];
+      if (!panicDatabase || panicDatabase.length === 0) return matches;
+
+      panicDatabase.forEach(entry => {
+        const dbErr = entry.errorCode.toUpperCase().trim();
+        if (!dbErr) return;
+
+        for (let term of searchTerms) {
+          if (!term) continue;
+          const cleanTerm = term.toUpperCase().trim();
+          if (!cleanTerm || cleanTerm.length < 2) continue;
+
+          // Strip leading 0X for comparison flexibility
+          const strip0xTerm = cleanTerm.replace(/^0X/, '');
+          const strip0xDb = dbErr.replace(/^0X/, '');
+
+          if (dbErr === cleanTerm || strip0xDb === strip0xTerm || dbErr.includes(cleanTerm) || dbErr.includes(strip0xTerm)) {
+            const exists = matches.some(m => 
+              m.panicType === entry.panicType && 
+              m.panicCode === entry.panicCode && 
+              m.errorCode === entry.errorCode && 
+              m.solution === entry.solution
+            );
+            if (!exists) {
+              matches.push(entry);
+            }
+            break;
+          }
+        }
+      });
+      return matches;
+    }
+
+    // Helper: Render Converter Summary with Matched Database Solutions
+    function renderConverterSummary(decDisplay, hexDisplay, termsToSearch) {
+      const summaryText = document.getElementById('converter-summary-text');
+      const matches = checkDatabaseMatches(termsToSearch);
+
+      let html = `
+        <div style="margin-bottom: 0.75rem;">
+          Decimal: <strong>${decDisplay}</strong> &harr; Hexadecimal Pair: <strong style="color: var(--accent-emerald);">${hexDisplay}</strong>
+        </div>
+      `;
+
+      if (matches.length > 0) {
+        html += `<div style="margin-top: 1rem; border-top: 1px dashed var(--card-border); padding-top: 0.85rem;">`;
+        html += `<div style="font-size: 0.85rem; color: var(--accent-amber); font-weight: 700; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">🔍 Diagnosed Database Matches (${matches.length}):</div>`;
+        
+        matches.forEach(m => {
+          html += `
+            <div class="result-item" style="margin-bottom: 0.6rem; background: rgba(255,255,255,0.03); padding: 0.85rem; border-radius: 10px;">
+              <div class="result-meta">
+                <span class="meta-tag">Type: <strong>${m.panicType}</strong></span>
+                <span class="meta-tag">Code: <strong>${m.panicCode}</strong></span>
+                <span class="meta-tag">Error Code: <strong>${m.errorCode}</strong></span>
+              </div>
+              <div style="font-size: 1.05rem; font-weight: 700; color: #10b981; margin-top: 0.4rem;">
+                🛠️ ${m.solution}
+              </div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      } else {
+        html += `
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+            ℹ️ No direct hardware solution match found in database for code "${hexDisplay}".
+          </div>
+        `;
+      }
+
+      summaryText.innerHTML = html;
+    }
+
+    // DECIMAL - HEXADECIMAL CONVERTER
+    function convertFromDecimal() {
+      const decVal = document.getElementById('dec-input').value.trim();
+      const hexInput = document.getElementById('hex-input');
+      const summaryText = document.getElementById('converter-summary-text');
+
+      if (decVal === '') {
+        hexInput.value = '';
+        summaryText.textContent = 'Enter a value in either field above to convert and search database instantly.';
+        return;
+      }
+
+      const parts = decVal.split(/[\s,]+/);
+      const hexResults = [];
+      const termsToSearch = [];
+
+      for (let part of parts) {
+        if (!part) continue;
+        const num = parseInt(part, 10);
+        if (isNaN(num)) {
+          summaryText.innerHTML = `<span style="color: #f87171;">⚠️ Invalid Decimal number: "${part}"</span>`;
+          return;
+        }
+        const hexStr = '0x' + num.toString(16).toUpperCase();
+        hexResults.push(hexStr);
+        termsToSearch.push(hexStr, num.toString(16).toUpperCase(), '0X' + num.toString(16).toUpperCase());
+      }
+
+      const finalHex = hexResults.join(' ');
+      hexInput.value = finalHex;
+
+      renderConverterSummary(decVal, finalHex, termsToSearch);
+    }
+
+    function convertFromHex() {
+      let hexVal = document.getElementById('hex-input').value.trim();
+      const decInput = document.getElementById('dec-input');
+      const summaryText = document.getElementById('converter-summary-text');
+
+      if (hexVal === '') {
+        decInput.value = '';
+        summaryText.textContent = 'Enter a value in either field above to convert and search database instantly.';
+        return;
+      }
+
+      const parts = hexVal.split(/[\s,]+/);
+      const decResults = [];
+      const formattedHexParts = [];
+      const termsToSearch = [];
+
+      for (let part of parts) {
+        if (!part) continue;
+        let cleanHex = part.replace(/^0x/i, '');
+        const num = parseInt(cleanHex, 16);
+        
+        termsToSearch.push(part, cleanHex, '0X' + cleanHex);
+
+        if (isNaN(num)) {
+          decResults.push(part);
+          formattedHexParts.push(part);
+        } else {
+          decResults.push(num);
+          formattedHexParts.push(part.startsWith('0x') || part.startsWith('0X') ? part : '0x' + part);
+        }
+      }
+
+      const finalDec = decResults.join(', ');
+      const finalHexDisplay = formattedHexParts.join(' ');
+
+      decInput.value = finalDec;
+
+      renderConverterSummary(finalDec, finalHexDisplay, termsToSearch);
     }
 
     // Fetch JSON from endpoint
@@ -154,7 +301,6 @@
       errorCodeSelect.addEventListener('change', handleErrorCodeChange);
     }
 
-    // Dropdown 1: Triggered when Panic Type changes
     function handlePanicTypeChange() {
       const selectedType = panicTypeSelect.value;
       
@@ -182,7 +328,6 @@
       panicCodeSelect.disabled = false;
     }
 
-    // Dropdown 2: Triggered when Panic Code changes
     function handlePanicCodeChange() {
       const selectedType = panicTypeSelect.value;
       const selectedCode = panicCodeSelect.value;
@@ -213,7 +358,6 @@
       errorCodeSelect.disabled = false;
     }
 
-    // Dropdown 3: Triggered when Error Code changes
     function handleErrorCodeChange() {
       const selectedType = panicTypeSelect.value;
       const selectedCode = panicCodeSelect.value;
@@ -325,7 +469,6 @@
       reader.readAsText(file);
     }
 
-    // TAB 2: Analyze pasted raw log file
     function analyzeRawLog() {
       const logText = document.getElementById('log-input').value;
       const resultsWrapper = document.getElementById('parser-results-wrapper');
@@ -403,7 +546,6 @@
       });
     }
 
-    // TAB 3: Build database tables
     function buildDatabaseTable() {
       const tbody = document.getElementById('db-table-body');
       tbody.innerHTML = '';
@@ -476,7 +618,7 @@
         { "Panic Type": "i2c", "Panic Code": "i2c0", "Error Code": "A11 series", "Solution": "U2700 U5600 U5660 U6110 J6400" },
         { "Panic Type": "i2c", "Panic Code": "i2c1", "Error Code": "A11 Series.", "Solution": "J4300 J6400" },
         { "Panic Type": "i2c", "Panic Code": "i2c2", "Error Code": "A11", "Solution": "U3301 J4200 U5000" },
-        { "Panic Type": "i2c", "Panic Code": "i2c3", "Error Code": "A11 X series", "Solution": "Display Power, Touch, Touch Seat" },
+        { "Panic Type": "i2c", "Panic Code": "i2c3", "Error Code": "A11 X series", "Solution": "Display Power, Touch, Touch Seat, etc." },
         { "Panic Type": "AOP PANIC", "Panic Code": "AOP PANIC", "Error Code": "SCMto", "Solution": "Vibration" },
         { "Panic Type": "AOP PANIC", "Panic Code": "AOP PANIC", "Error Code": "Systick watchdog", "Solution": "Big Audio" },
         { "Panic Type": "A ", "Panic Code": "Panics starting with letter (A)", "Error Code": "AppleBCMWLAN", "Solution": "WiFi Bluetooth" }
