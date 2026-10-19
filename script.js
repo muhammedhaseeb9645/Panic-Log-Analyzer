@@ -15,7 +15,38 @@
       fetchPanicData();
       initDragAndDrop();
       initOnlineUserCounter();
+      initTheme();
     });
+
+    // Theme Toggle Functionality (Dark / Night Mode Switcher)
+    function initTheme() {
+      const savedTheme = localStorage.getItem('mhtech_theme') || 'dark';
+      const htmlEl = document.documentElement;
+      const themeIcon = document.getElementById('theme-icon');
+
+      if (savedTheme === 'light') {
+        htmlEl.classList.remove('dark');
+        if (themeIcon) themeIcon.textContent = '☀️';
+      } else {
+        htmlEl.classList.add('dark');
+        if (themeIcon) themeIcon.textContent = '🌙';
+      }
+    }
+
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      const themeIcon = document.getElementById('theme-icon');
+
+      if (htmlEl.classList.contains('dark')) {
+        htmlEl.classList.remove('dark');
+        localStorage.setItem('mhtech_theme', 'light');
+        if (themeIcon) themeIcon.textContent = '☀️';
+      } else {
+        htmlEl.classList.add('dark');
+        localStorage.setItem('mhtech_theme', 'dark');
+        if (themeIcon) themeIcon.textContent = '🌙';
+      }
+    }
 
     // Switch between navigation tabs
     function switchTab(tabId) {
@@ -40,21 +71,16 @@
       const onlineCountEl = document.getElementById('online-count');
       if (!onlineCountEl) return;
 
-      // Set initial random value between 180 and 850
       let currentCount = Math.floor(Math.random() * (850 - 180 + 1)) + 180;
       onlineCountEl.textContent = currentCount;
 
-      // Periodically fluctuate user count up and down
       setInterval(() => {
-        // Random change between -6 and +7
         const fluctuation = Math.floor(Math.random() * 14) - 6;
         currentCount += fluctuation;
 
-        // Keep bounds strictly between 100 and 1000
         if (currentCount > 1000) currentCount = 985;
         if (currentCount < 100) currentCount = 115;
 
-        // Animate count change with subtle scale effect
         onlineCountEl.style.transform = 'scale(1.15)';
         onlineCountEl.style.color = fluctuation > 0 ? '#34d399' : '#f87171';
         onlineCountEl.textContent = currentCount;
@@ -64,7 +90,7 @@
           onlineCountEl.style.color = '';
         }, 400);
 
-      }, 3500); // Updates every 3.5 seconds
+      }, 3500);
     }
 
     // Fetch JSON from endpoint
@@ -81,7 +107,6 @@
         console.warn('Unable to fetch remote panic log database, loading local fallback data.', err);
         errorAlert.style.display = 'block';
         document.getElementById('error-message').textContent = `Could not fetch database from CDN: ${err.message}. Loading local database instead.`;
-        // Load fallback backup data
         loadLocalFallbackData();
       } finally {
         loadingState.style.display = 'none';
@@ -96,7 +121,6 @@
         return;
       }
 
-      // De-duplicate and trim keys and values
       panicDatabase = rawData.map(item => {
         return {
           panicType: (item["Panic Type"] || item["panicType"] || "").trim(),
@@ -106,21 +130,16 @@
         };
       });
 
-      // Populate Panic Type Dropdown
       populatePanicTypes();
-      
-      // Populate full reference table
       buildDatabaseTable();
     }
 
     // Populate the first level select options
     function populatePanicTypes() {
-      // Get unique types
       const uniqueTypes = [...new Set(panicDatabase.map(item => item.panicType))]
         .filter(type => type.length > 0)
         .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-      // Clear existing options except default placeholder
       panicTypeSelect.innerHTML = '<option value="">-- Choose Type --</option>';
       
       uniqueTypes.forEach(type => {
@@ -130,7 +149,6 @@
         panicTypeSelect.appendChild(opt);
       });
 
-      // Bind listener
       panicTypeSelect.addEventListener('change', handlePanicTypeChange);
       panicCodeSelect.addEventListener('change', handlePanicCodeChange);
       errorCodeSelect.addEventListener('change', handleErrorCodeChange);
@@ -140,7 +158,6 @@
     function handlePanicTypeChange() {
       const selectedType = panicTypeSelect.value;
       
-      // Reset subsequent dropdowns
       panicCodeSelect.innerHTML = '<option value="">-- Select Code --</option>';
       panicCodeSelect.disabled = true;
       errorCodeSelect.innerHTML = '<option value="">-- Select Error --</option>';
@@ -149,15 +166,11 @@
 
       if (!selectedType) return;
 
-      // Filter entries for the selected type
       const filtered = panicDatabase.filter(item => item.panicType === selectedType);
-      
-      // Get unique Panic Codes for this type
       const uniqueCodes = [...new Set(filtered.map(item => item.panicCode))]
         .filter(code => code.length > 0)
         .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-      // Populate
       panicCodeSelect.innerHTML = '<option value="">-- Choose Code --</option>';
       uniqueCodes.forEach(code => {
         const opt = document.createElement('option');
@@ -174,25 +187,21 @@
       const selectedType = panicTypeSelect.value;
       const selectedCode = panicCodeSelect.value;
 
-      // Reset error code select
       errorCodeSelect.innerHTML = '<option value="">-- Select Error --</option>';
       errorCodeSelect.disabled = true;
       hideSolution();
 
       if (!selectedCode) return;
 
-      // Filter entries for selected type and code
       const filtered = panicDatabase.filter(item => 
         item.panicType === selectedType && 
         item.panicCode === selectedCode
       );
 
-      // Get unique Error Codes for this combination
       const uniqueErrors = [...new Set(filtered.map(item => item.errorCode))]
         .filter(err => err.length > 0)
         .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-      // Populate
       errorCodeSelect.innerHTML = '<option value="">-- Choose Error Code --</option>';
       uniqueErrors.forEach(err => {
         const opt = document.createElement('option');
@@ -215,7 +224,6 @@
         return;
       }
 
-      // Find the specific matching entries
       const matches = panicDatabase.filter(item => 
         item.panicType === selectedType && 
         item.panicCode === selectedCode && 
@@ -230,19 +238,16 @@
       }
     }
 
-    // Display the solution in a bold label
     function showSolution(text) {
       solutionText.innerHTML = `<strong>${text}</strong>`;
       solutionBox.style.display = 'block';
     }
 
-    // Hide solution container
     function hideSolution() {
       solutionBox.style.display = 'none';
       solutionText.innerHTML = 'Select all dropdown fields to view the solution.';
     }
 
-    // Reset selectors to default state
     function resetDropdowns() {
       panicTypeSelect.value = '';
       panicCodeSelect.innerHTML = '<option value="">-- Select Type First --</option>';
@@ -252,14 +257,12 @@
       hideSolution();
     }
 
-    // Copy Solution text to clipboard
     function copySolution() {
       const textToCopy = solutionText.innerText;
       if (!textToCopy || textToCopy.includes('Select all dropdown')) return;
 
       navigator.clipboard.writeText(textToCopy).then(() => {
         const copyBtnSpan = document.querySelector('#copy-btn span');
-        
         copyBtnSpan.textContent = 'Copied!';
         copyBtnSpan.style.color = '#10b981';
         
@@ -317,7 +320,6 @@
       reader.onload = function(e) {
         const content = e.target.result;
         document.getElementById('log-input').value = content;
-        // Automatically trigger analysis
         analyzeRawLog();
       };
       reader.readAsText(file);
@@ -339,10 +341,8 @@
 
       const foundMatches = [];
 
-      // Scan our panic database for matches inside the log string
       panicDatabase.forEach(entry => {
         const logLower = logText.toLowerCase();
-        
         const errorCodeLower = entry.errorCode.toLowerCase();
         const panicCodeLower = entry.panicCode.toLowerCase();
 
@@ -383,7 +383,6 @@
         return;
       }
 
-      // Render matches
       foundMatches.forEach(match => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'result-item';
@@ -423,7 +422,6 @@
       updateTableRowCount(panicDatabase.length);
     }
 
-    // Filter database rows based on search input
     function filterDatabaseTable() {
       const searchQuery = document.getElementById('db-search').value.toLowerCase().trim();
       const rows = document.querySelectorAll('#db-table-body tr');
