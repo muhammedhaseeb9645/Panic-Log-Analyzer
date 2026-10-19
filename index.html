@@ -44,6 +44,9 @@
       <button class="tab-btn" onclick="switchTab('parser-tab')">
         <span style="font-size: 1.1rem;">📄</span> Log Parser & Drop
       </button>
+      <button class="tab-btn" onclick="switchTab('converter-tab')">
+        <span style="font-size: 1.1rem;">🔢</span> Dec &harr; Hex
+      </button>
       <button class="tab-btn" onclick="switchTab('database-tab')">
         <span style="font-size: 1.1rem;">🔍</span> Browse Database
       </button>
@@ -157,7 +160,41 @@
         </div>
       </div>
 
-      <!-- TAB 3: SEARCHABLE DATABASE -->
+      <!-- TAB 3: DECIMAL - HEXADECIMAL CONVERTER (With Auto Database Matching) -->
+      <div id="converter-tab" class="tab-content">
+        <p class="log-parser-desc">
+          Convert Decimal numbers to Hexadecimal (Hex) and vice-versa. Matched database error codes and repair solutions will automatically appear in the summary below.
+        </p>
+        
+        <div class="analyzer-grid converter-grid-mobile">
+          <!-- Decimal Input -->
+          <div class="form-group">
+            <label for="dec-input">Decimal (Dec)</label>
+            <div class="search-input-wrapper" style="width: 100%;">
+              <input type="text" id="dec-input" class="search-input" placeholder="e.g. 524288" oninput="convertFromDecimal()" style="padding-left: 1.25rem;">
+            </div>
+          </div>
+
+          <!-- Hexadecimal Input -->
+          <div class="form-group">
+            <label for="hex-input">Hexadecimal (Hex / Pair)</label>
+            <div class="search-input-wrapper" style="width: 100%;">
+              <input type="text" id="hex-input" class="search-input" placeholder="e.g. 0x80000 or TP2A TP3R" oninput="convertFromHex()" style="padding-left: 1.25rem;">
+            </div>
+          </div>
+        </div>
+
+        <div class="solution-container" id="converter-result-box" style="display: block; background: var(--input-bg); border-color: var(--primary);">
+          <div class="solution-header">
+            <span class="solution-title" style="color: var(--primary);">💡 Conversion & Database Matching Summary</span>
+          </div>
+          <div class="solution-label" id="converter-summary-text" style="font-size: 1.05rem; color: var(--text-secondary);">
+            Enter a value in either field above to convert and search database instantly.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: SEARCHABLE DATABASE -->
       <div id="database-tab" class="tab-content">
         <div class="db-controls">
           <div class="search-input-wrapper">
