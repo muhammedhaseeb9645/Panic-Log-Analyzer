@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
+  <!-- Tesseract.js CDN for AI OCR Screenshot Scanning -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -42,7 +45,7 @@
         <span style="font-size: 1.1rem;">⚡</span> Dropdowns
       </button>
       <button class="tab-btn" onclick="switchTab('parser-tab')">
-        <span style="font-size: 1.1rem;">📄</span> Log Parser & Drop
+        <span style="font-size: 1.1rem;">📄</span> Log Parser & Image OCR
       </button>
       <button class="tab-btn" onclick="switchTab('converter-tab')">
         <span style="font-size: 1.1rem;">🔢</span> Dec &harr; Hex
@@ -125,23 +128,29 @@
         </div>
       </div>
 
-      <!-- TAB 2: RAW LOG ANALYZER & DRAG/DROP -->
+      <!-- TAB 2: RAW LOG ANALYZER & IMAGE OCR DRAG/DROP -->
       <div id="parser-tab" class="tab-content">
         <p class="log-parser-desc">
-          Paste the raw text below OR <strong>drag and drop</strong> your panic log text file (.ips, .txt, .log) directly into the box to analyze instantly.
+          Paste panic log text, OR <strong>drag & drop a screenshot / photo</strong> (.jpg, .png, .ips, .txt) of the panic log. AI OCR will read the image text automatically!
         </p>
         
         <!-- Drag and Drop Dropzone Area -->
         <div id="drop-zone" class="drop-zone">
           <div class="drop-zone-content">
-            <span style="font-size: 2rem; margin-bottom: 0.5rem; display: block;">📂</span>
-            <p>Drag & Drop your Panic Log file here</p>
-            <span class="drop-zone-sub">or paste text in the box below</span>
+            <span style="font-size: 2rem; margin-bottom: 0.5rem; display: block;">🖼️ 📂</span>
+            <p>Drag & Drop Panic Log File or Screenshot Photo Here</p>
+            <span class="drop-zone-sub">Supports .PNG, .JPG, .IPS, .TXT log files or Paste (Ctrl+V)</span>
           </div>
         </div>
 
+        <!-- OCR Scanning Indicator -->
+        <div id="ocr-status-box" class="ocr-status-container" style="display: none;">
+          <div class="spinner-small"></div>
+          <span id="ocr-status-text">Reading text from screenshot image using AI OCR...</span>
+        </div>
+
         <div class="textarea-wrapper" style="margin-top: 1rem;">
-          <textarea id="log-input" placeholder='Paste your panic log here... (e.g., "panic(cpu 0 caller 0xfffffff01bf8a77c): SMC PANIC - ASSERTION... Sensor array (1)... Error Code: 0X80000")'></textarea>
+          <textarea id="log-input" placeholder='Paste panic log text or drop screenshot photo here... (e.g., "panic(cpu 0 caller 0xfffffff01bf8a77c): SMC PANIC - ASSERTION... Sensor array (1)... Error Code: 0X80000")'></textarea>
         </div>
         
         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
@@ -149,8 +158,8 @@
             <span>🔍</span> Analyze Log Report
           </button>
           <label class="btn-file-upload">
-            <span>📁</span> Browse File
-            <input type="file" id="file-upload-input" accept=".txt,.log,.ips,.json" style="display: none;" onchange="handleFileSelect(event)">
+            <span>📷</span> Upload File / Photo
+            <input type="file" id="file-upload-input" accept=".txt,.log,.ips,.json,image/*,.png,.jpg,.jpeg" style="display: none;" onchange="handleFileSelect(event)">
           </label>
         </div>
 
@@ -160,7 +169,7 @@
         </div>
       </div>
 
-      <!-- TAB 3: DECIMAL - HEXADECIMAL CONVERTER (With Auto Database Matching) -->
+      <!-- TAB 3: DECIMAL - HEXADECIMAL CONVERTER -->
       <div id="converter-tab" class="tab-content">
         <p class="log-parser-desc">
           Convert Decimal numbers to Hexadecimal (Hex) and vice-versa. Matched database error codes and repair solutions will automatically appear in the summary below.
