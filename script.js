@@ -16,6 +16,7 @@
       initDragAndDrop();
       initOnlineUserCounter();
       initTheme();
+      initPasteEventListener();
     });
 
     // Theme Toggle Functionality
@@ -104,7 +105,6 @@
           const cleanTerm = term.toUpperCase().trim();
           if (!cleanTerm || cleanTerm.length < 2) continue;
 
-          // Strip leading 0X for comparison flexibility
           const strip0xTerm = cleanTerm.replace(/^0X/, '');
           const strip0xDb = dbErr.replace(/^0X/, '');
 
@@ -419,7 +419,7 @@
       });
     }
 
-    // DRAG AND DROP & FILE UPLOAD HANDLING
+    // DRAG AND DROP, FILE & SCREENSHOT IMAGE OCR HANDLING
     function initDragAndDrop() {
       const dropZone = document.getElementById('drop-zone');
 
@@ -452,6 +452,21 @@
       });
     }
 
+    // Support Image Paste from Clipboard (Ctrl+V)
+    function initPasteEventListener() {
+      window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+          if (item.kind === 'file' && item.type.startsWith('image/')) {
+            const blob = item.getAsFile();
+            switchTab('parser-tab');
+            handleUploadedFile(blob);
+            break;
+          }
+        }
+      });
+    }
+
     function handleFileSelect(event) {
       const files = event.target.files;
       if (files.length > 0) {
@@ -460,22 +475,76 @@
     }
 
     function handleUploadedFile(file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const content = e.target.result;
-        document.getElementById('log-input').value = content;
-        analyzeRawLog();
-      };
-      reader.readAsText(file);
+      // Check if uploaded file is an image (Screenshot or Photo)
+      if (file.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp)$/i.test(file.name || '')) {
+        processImageOCR(file);
+      } else {
+        // Text / Log file
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const content = e.target.result;
+          document.getElementById('log-input').value = content;
+          analyzeRawLog();
+        };
+        reader.readAsText(file);
+      }
     }
 
+    // AI OCR Image Processing Function using Tesseract.js
+    async function processImageOCR(imageFile) {
+      const ocrStatusBox = document.getElementById('ocr-status-box');
+      const ocrStatusText = document.getElementById('ocr-status-text');
+      const logInput = document.getElementById('log-input');
+
+      ocrStatusBox.style.display = 'flex';
+      ocrStatusText.textContent = 'Reading text from screenshot image using AI OCR...';
+
+      try {
+        if (typeof Tesseract === 'undefined') {
+          throw new Error('OCR Library not loaded yet. Please check internet connection.');
+        }
+
+        const result = await Tesseract.recognize(imageFile, 'eng', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              const pct = Math.round(m.progress * 100);
+              ocrStatusText.textContent = `Scanning Screenshot OCR... ${pct}% completed`;
+            }
+          }
+        });
+
+        const extractedText = result.data.text;
+        
+        if (extractedText && extractedText.trim().length > 0) {
+          logInput.value = extractedText;
+          ocrStatusText.textContent = '✅ Image OCR Text Extracted Successfully!';
+          setTimeout(() => {
+            ocrStatusBox.style.display = 'none';
+          }, 2500);
+          
+          // Trigger diagnosis matching
+          analyzeRawLog();
+        } else {
+          throw new Error('Could not read clear text from the screenshot image.');
+        }
+
+      } catch (err) {
+        console.error('OCR Processing Error: ', err);
+        ocrStatusText.textContent = `⚠️ Image OCR Error: ${err.message || 'Could not extract text.'}`;
+        setTimeout(() => {
+          ocrStatusBox.style.display = 'none';
+        }, 4000);
+      }
+    }
+
+    // TAB 2: Analyze pasted or OCR extracted raw log text
     function analyzeRawLog() {
       const logText = document.getElementById('log-input').value;
       const resultsWrapper = document.getElementById('parser-results-wrapper');
       const resultsContainer = document.getElementById('parser-results-container');
       
       if (!logText.trim()) {
-        alert('Please paste a panic log output or drop a file to analyze.');
+        alert('Please paste panic log output, or drop a text file / screenshot photo to analyze.');
         return;
       }
 
@@ -586,9 +655,10 @@
       document.getElementById('db-row-count').textContent = `Showing ${count} of ${panicDatabase.length} entries`;
     }
 
-    // Fallback data if CDN fetch fails
+    // Comprehensive Fallback Database including all old and new entries
     function loadLocalFallbackData() {
       const fallbackJson = [
+        // ORIGINAL SMC PANIC ENTRIES
         { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (1)", "Error Code": "0X80000", "Solution": "It`s the Proximity Flex Cable" },
         { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (1)", "Error Code": "0X140000", "Solution": "It`s the Charging Port & Power Button Flex or Barometer" },
         { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (1)", "Error Code": "0X180000", "Solution": "It`s the Prox Flex & Power Button Flex" },
@@ -606,6 +676,8 @@
         { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (2)", "Error Code": "0X100000", "Solution": "It`s the Power Button Flex / Charging Port Flex" },
         { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (2)", "Error Code": "0X200000", "Solution": "It`s the Proximity Flex Cable" },
         { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (2)", "Error Code": "0X300000", "Solution": "It`s the Proximity Flex Cable / Camera system" },
+        
+        // ORIGINAL USERSPACE WATCHDOG ENTRIES
         { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TT1P TT2P", "Solution": "Screen" },
         { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TG0B", "Solution": "Battery No Data" },
         { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TP3R", "Solution": "NTC Problem" },
@@ -615,13 +687,42 @@
         { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "Prs0", "Solution": "Charging Port Flex / U7400" },
         { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "MIC1", "Solution": "Charging Port Flex" },
         { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "MIC2", "Solution": "Power Key Flex" },
+        
+        // ORIGINAL I2C & AOP & OTHERS
         { "Panic Type": "i2c", "Panic Code": "i2c0", "Error Code": "A11 series", "Solution": "U2700 U5600 U5660 U6110 J6400" },
         { "Panic Type": "i2c", "Panic Code": "i2c1", "Error Code": "A11 Series.", "Solution": "J4300 J6400" },
         { "Panic Type": "i2c", "Panic Code": "i2c2", "Error Code": "A11", "Solution": "U3301 J4200 U5000" },
         { "Panic Type": "i2c", "Panic Code": "i2c3", "Error Code": "A11 X series", "Solution": "Display Power, Touch, Touch Seat, etc." },
         { "Panic Type": "AOP PANIC", "Panic Code": "AOP PANIC", "Error Code": "SCMto", "Solution": "Vibration" },
         { "Panic Type": "AOP PANIC", "Panic Code": "AOP PANIC", "Error Code": "Systick watchdog", "Solution": "Big Audio" },
-        { "Panic Type": "A ", "Panic Code": "Panics starting with letter (A)", "Error Code": "AppleBCMWLAN", "Solution": "WiFi Bluetooth" }
+        { "Panic Type": "A ", "Panic Code": "Panics starting with letter (A)", "Error Code": "AppleBCMWLAN", "Solution": "WiFi Bluetooth" },
+
+        // --- NEW EXTENDED ENTRIES ---
+        { "Panic Type": "NVMe / Storage", "Panic Code": "ANS2", "Error Code": "AppleANS", "Solution": "NAND Storage issue. Check NAND power lines, reball or replace NAND." },
+        { "Panic Type": "NVMe / Storage", "Panic Code": "PCIe Timeout", "Error Code": "ApplePCIe", "Solution": "NAND, Wi-Fi or Baseband connection issue. Check PCIe lines." },
+        { "Panic Type": "Baseband", "Panic Code": "AppleBaseband", "Error Code": "Baseband", "Solution": "Baseband CPU or PMU failure. Check BB lines." },
+        { "Panic Type": "Watchdog Timeout", "Panic Code": "thermalmonitord", "Error Code": "Missing Sensor", "Solution": "Check Charging Port Flex, Power Button Flex, or Battery data lines." },
+        { "Panic Type": "AOP PANIC", "Panic Code": "AOP PANIC", "Error Code": "no-pulse", "Solution": "Barometer, Gyroscope, or ALS sensor failure." },
+        { "Panic Type": "AOP PANIC", "Panic Code": "AOP PANIC", "Error Code": "LPP", "Solution": "Low Power Partition issue - Check Audio IC or Tristar/Hydra." },
+        { "Panic Type": "Kernel Panic", "Panic Code": "WDT timeout", "Error Code": "WDT", "Solution": "Watchdog timeout. CPU, Battery SWI line, or Software issue." },
+        { "Panic Type": "Kernel Panic", "Panic Code": "Sleep/Wake", "Error Code": "Sleep/Wake hang", "Solution": "Tristar / Tigris / Hydra USB charging IC." },
+        { "Panic Type": "Kernel Panic", "Panic Code": "AppleCS42L", "Error Code": "Audio IC", "Solution": "Audio Codec IC issue. Reball or replace Audio IC." },
+        { "Panic Type": "i2c", "Panic Code": "i2c0", "Error Code": "General", "Solution": "Display PMU (Chestnut), Backlight IC, or Display connector." },
+        { "Panic Type": "i2c", "Panic Code": "i2c1", "Error Code": "General", "Solution": "Touch IC, ALS, Proximity, Front/Rear Cameras." },
+        { "Panic Type": "i2c", "Panic Code": "i2c2", "Error Code": "General", "Solution": "Audio IC, Speaker Amp, Tristar/Hydra, Taptic Engine." },
+        { "Panic Type": "i2c", "Panic Code": "i2c3", "Error Code": "General", "Solution": "Baseband, NFC, EEPROM." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TG0V", "Solution": "Battery / Charging port temperature sensor data missing." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TG1B", "Solution": "Battery connection or Battery data failure." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TG1v", "Solution": "Charging Port Flex / Battery issue." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TP0D", "Solution": "Back Glass Flex / Wireless Charging Coil issue." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "TP7R", "Solution": "Screen / Display Flex sensor missing." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "VD0C", "Solution": "Charging port flex issue (common on iPhone 12/13 series)." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "NFC", "Solution": "NFC antenna or IC issue." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "ALS", "Solution": "Ambient Light Sensor / Earpiece flex cable." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "MIC3", "Solution": "Screen / Earpiece Flex microphone failure." },
+        { "Panic Type": "Userspace watchdog timeout", "Panic Code": "Userspace watchdog timeout", "Error Code": "MIC4", "Solution": "Rear Camera / Flash mic failure." },
+        { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (1)", "Error Code": "0x2000000", "Solution": "Battery communication line (SWI)." },
+        { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (1)", "Error Code": "0x4000000", "Solution": "Charging Port Flex / Tigris IC." }
       ];
       processData(fallbackJson);
     }
