@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tesseract.js CDN for AI OCR Screenshot Scanning -->
+  <!-- Tesseract.js CDN for AI OCR Scanning -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <link rel="stylesheet" href="styles.css">
@@ -17,13 +17,13 @@
 <body>
 
   <!-- Theme Toggle Floating Button -->
-  <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Night Mode">
+  <button class="theme-toggle-btn premium-hover" onclick="toggleTheme()" title="Toggle Dark/Night Mode">
     <span id="theme-icon">🌙</span>
   </button>
 
   <div class="container">
     
-    <header>
+    <header class="animate-fade-in-up">
       <div class="header-badges">
         <div class="badge">
           <span class="badge-dot"></span>
@@ -40,29 +40,29 @@
     </header>
 
     <!-- Navigation Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('selector-tab')">
+    <div class="tabs animate-fade-in-up" style="animation-delay: 0.1s;">
+      <button class="tab-btn active premium-hover" onclick="switchTab('selector-tab')">
         <span style="font-size: 1.1rem;">⚡</span> Dropdowns
       </button>
-      <button class="tab-btn" onclick="switchTab('parser-tab')">
-        <span style="font-size: 1.1rem;">📄</span> Log Parser & Image OCR
+      <button class="tab-btn premium-hover" onclick="switchTab('parser-tab')">
+        <span style="font-size: 1.1rem;">📄</span> Log Parser & Photo OCR
       </button>
-      <button class="tab-btn" onclick="switchTab('converter-tab')">
+      <button class="tab-btn premium-hover" onclick="switchTab('converter-tab')">
         <span style="font-size: 1.1rem;">🔢</span> Dec &harr; Hex
       </button>
-      <button class="tab-btn" onclick="switchTab('database-tab')">
+      <button class="tab-btn premium-hover" onclick="switchTab('database-tab')">
         <span style="font-size: 1.1rem;">🔍</span> Browse Database
       </button>
     </div>
 
     <!-- Error Alert Banner -->
-    <div id="error-alert" class="error-box">
+    <div id="error-alert" class="error-box animate-fade-in-up">
       <h3 style="margin-bottom: 0.5rem; font-family:'Outfit'; font-weight:700;">Connection Issue</h3>
       <p id="error-message">Could not fetch panic logs dataset from the remote server. Using local fallback database.</p>
     </div>
 
     <!-- Main Card container -->
-    <div class="card" id="main-card">
+    <div class="card animate-fade-in-up" id="main-card" style="animation-delay: 0.2s;">
       
       <!-- LOADING SPINNER -->
       <div id="loading-state" class="loader-container">
@@ -74,93 +74,96 @@
       <div id="selector-tab" class="tab-content">
         <div class="analyzer-grid">
           
-          <!-- Panic Type Select -->
-          <div class="form-group">
+          <div class="form-group premium-stagger" style="animation-delay: 0.1s;">
             <label for="panic-type-select">1. Panic Type</label>
             <div class="select-wrapper">
-              <select id="panic-type-select" disabled>
-                <option value="">-- Choose Type --</option>
-              </select>
+              <select id="panic-type-select" disabled><option value="">-- Choose Type --</option></select>
             </div>
           </div>
 
-          <!-- Panic Code Select -->
-          <div class="form-group">
+          <div class="form-group premium-stagger" style="animation-delay: 0.2s;">
             <label for="panic-code-select">2. Panic Code</label>
             <div class="select-wrapper">
-              <select id="panic-code-select" disabled>
-                <option value="">-- Select Type First --</option>
-              </select>
+              <select id="panic-code-select" disabled><option value="">-- Select Type First --</option></select>
             </div>
           </div>
 
-          <!-- Error Code Select -->
-          <div class="form-group">
+          <div class="form-group premium-stagger" style="animation-delay: 0.3s;">
             <label for="error-code-select">3. Error Code</label>
             <div class="select-wrapper">
-              <select id="error-code-select" disabled>
-                <option value="">-- Select Code First --</option>
-              </select>
+              <select id="error-code-select" disabled><option value="">-- Select Code First --</option></select>
             </div>
           </div>
 
         </div>
 
         <!-- Result Container -->
-        <div class="solution-container" id="solution-box">
+        <div class="solution-container premium-stagger" id="solution-box" style="animation-delay: 0.4s;">
           <div class="solution-header">
             <span class="solution-title">🔧 Diagnosed Hardware Repair Solution</span>
-            <button class="btn-copy" id="copy-btn" onclick="copySolution()">
+            <button class="btn-copy premium-hover" id="copy-btn" onclick="copySolution()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               <span>Copy</span>
             </button>
           </div>
-          <!-- Solution displayed as a bold label -->
-          <div class="solution-label" id="solution-text">
-            <strong>Select all dropdown fields to view the solution.</strong>
-          </div>
+          <div class="solution-label" id="solution-text"><strong>Select all dropdown fields to view the solution.</strong></div>
         </div>
 
-        <div class="actions-row">
-          <button class="btn-reset" onclick="resetDropdowns()">
-            <span>🔄</span> Reset Selector
-          </button>
+        <div class="actions-row premium-stagger" style="animation-delay: 0.5s;">
+          <button class="btn-reset premium-hover" onclick="resetDropdowns()"><span>🔄</span> Reset Selector</button>
         </div>
       </div>
 
-      <!-- TAB 2: RAW LOG ANALYZER & IMAGE OCR DRAG/DROP -->
+      <!-- TAB 2: RAW LOG ANALYZER & PHOTO OCR DRAG/DROP -->
       <div id="parser-tab" class="tab-content">
         <p class="log-parser-desc">
-          Paste panic log text, OR <strong>drag & drop a screenshot / photo</strong> (.jpg, .png, .ips, .txt) of the panic log. AI OCR will read the image text automatically!
+          Paste panic log text, OR <strong>drag & drop a photo</strong> (.jpg, .png) of the panic log. AI Analysis will read the text automatically!
         </p>
         
-        <!-- Drag and Drop Dropzone Area -->
-        <div id="drop-zone" class="drop-zone">
+        <div id="drop-zone" class="drop-zone premium-hover">
           <div class="drop-zone-content">
             <span style="font-size: 2rem; margin-bottom: 0.5rem; display: block;">🖼️ 📂</span>
-            <p>Drag & Drop Panic Log File or Screenshot Photo Here</p>
+            <p>Drag & Drop Panic Log File or Photo Here</p>
             <span class="drop-zone-sub">Supports .PNG, .JPG, .IPS, .TXT log files or Paste (Ctrl+V)</span>
           </div>
         </div>
 
-        <!-- OCR Scanning Indicator -->
+        <!-- OCR Scanning Indicator (AI Analysis) -->
         <div id="ocr-status-box" class="ocr-status-container" style="display: none;">
-          <div class="spinner-small"></div>
-          <span id="ocr-status-text">Reading text from screenshot image using AI OCR...</span>
+          <div class="spinner-small premium-pulse"></div>
+          <span id="ocr-status-text">AI Analysis in progress...</span>
         </div>
 
         <div class="textarea-wrapper" style="margin-top: 1rem;">
-          <textarea id="log-input" placeholder='Paste panic log text or drop screenshot photo here... (e.g., "panic(cpu 0 caller 0xfffffff01bf8a77c): SMC PANIC - ASSERTION... Sensor array (1)... Error Code: 0X80000")'></textarea>
+          <textarea id="log-input" placeholder='Paste panic log text or drop photo here...'></textarea>
         </div>
         
-        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-          <button class="btn-analyze" onclick="analyzeRawLog()">
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 1rem;">
+          <button class="btn-analyze premium-hover" onclick="analyzeRawLog()">
             <span>🔍</span> Analyze Log Report
           </button>
-          <label class="btn-file-upload">
+          <label class="btn-file-upload premium-hover">
             <span>📷</span> Upload File / Photo
             <input type="file" id="file-upload-input" accept=".txt,.log,.ips,.json,image/*,.png,.jpg,.jpeg" style="display: none;" onchange="handleFileSelect(event)">
           </label>
+        </div>
+
+        <!-- NEW: Device Info Highlights Box -->
+        <div id="device-info-highlight" class="device-highlight-box" style="display: none;">
+          <div class="device-info-item">
+            <span class="device-icon">📱</span>
+            <div class="device-text">
+              <div class="device-label">Device Model</div>
+              <div class="device-value" id="highlight-model">Unknown</div>
+            </div>
+          </div>
+          <div class="device-info-item">
+            <span class="device-icon">⚙️</span>
+            <div class="device-text">
+              <div class="device-label">iOS Version</div>
+              <div class="device-value" id="highlight-ios">Unknown</div>
+            </div>
+          </div>
         </div>
 
         <div class="parser-results" id="parser-results-wrapper">
@@ -171,20 +174,15 @@
 
       <!-- TAB 3: DECIMAL - HEXADECIMAL CONVERTER -->
       <div id="converter-tab" class="tab-content">
-        <p class="log-parser-desc">
-          Convert Decimal numbers to Hexadecimal (Hex) and vice-versa. Matched database error codes and repair solutions will automatically appear in the summary below.
-        </p>
+        <p class="log-parser-desc">Convert Decimal numbers to Hexadecimal (Hex) and vice-versa.</p>
         
         <div class="analyzer-grid converter-grid-mobile">
-          <!-- Decimal Input -->
           <div class="form-group">
             <label for="dec-input">Decimal (Dec)</label>
             <div class="search-input-wrapper" style="width: 100%;">
               <input type="text" id="dec-input" class="search-input" placeholder="e.g. 524288" oninput="convertFromDecimal()" style="padding-left: 1.25rem;">
             </div>
           </div>
-
-          <!-- Hexadecimal Input -->
           <div class="form-group">
             <label for="hex-input">Hexadecimal (Hex / Pair)</label>
             <div class="search-input-wrapper" style="width: 100%;">
@@ -193,7 +191,7 @@
           </div>
         </div>
 
-        <div class="solution-container" id="converter-result-box" style="display: block; background: var(--input-bg); border-color: var(--primary);">
+        <div class="solution-container premium-stagger" id="converter-result-box" style="display: block; background: var(--input-bg); border-color: var(--primary);">
           <div class="solution-header">
             <span class="solution-title" style="color: var(--primary);">💡 Conversion & Database Matching Summary</span>
           </div>
@@ -205,14 +203,13 @@
 
       <!-- TAB 4: SEARCHABLE DATABASE -->
       <div id="database-tab" class="tab-content">
-        <div class="db-controls">
+        <div class="db-controls premium-stagger">
           <div class="search-input-wrapper">
             <input type="text" class="search-input" id="db-search" placeholder="Search by panic type, code, error, or solution..." oninput="filterDatabaseTable()">
           </div>
           <div class="db-count" id="db-row-count">Showing 0 entries</div>
         </div>
-
-        <div class="db-table-container">
+        <div class="db-table-container premium-stagger" style="animation-delay: 0.1s;">
           <table>
             <thead>
               <tr>
@@ -222,9 +219,7 @@
                 <th style="width: 30%;">Solution</th>
               </tr>
             </thead>
-            <tbody id="db-table-body">
-              <!-- Loaded dynamically -->
-            </tbody>
+            <tbody id="db-table-body"></tbody>
           </table>
         </div>
       </div>
