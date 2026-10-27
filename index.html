@@ -32,7 +32,7 @@
         <!-- Live Online Users Badge -->
         <div class="badge online-badge">
           <span class="online-dot"></span>
-          <span id="online-count">482</span> Online Technicians
+          <span id="online-count">482</span> Online
         </div>
       </div>
       <h1>Panic Log Analyzer</h1>
@@ -71,7 +71,7 @@
       </div>
 
       <!-- TAB 1: DROPDOWNS -->
-      <div id="selector-tab" class="tab-content">
+      <div id="selector-tab" class="tab-content active">
         <div class="analyzer-grid">
           
           <div class="form-group premium-stagger" style="animation-delay: 0.1s;">
@@ -231,6 +231,30 @@
       <p>Technician Resource Database &bull; <a href="https://www.instagram.com/muhammedhaseeb_mhtech/" target="_blank" rel="noopener">MHTECH</a> Reference</p>
     </footer>
 
+  </div>
+
+  <!-- PREMIUM ACTIVATION MODAL (BUG FIXED) -->
+  <div id="activation-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔒</div>
+      <h3 style="margin-bottom: 0.5rem; font-family:'Outfit'; font-size: 1.5rem; color: var(--text-primary);">Restricted Access</h3>
+      <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.4;">
+        Please enter your premium activation key to unlock the searchable technician database.
+      </p>
+      
+      <div style="margin-bottom: 0.5rem; width: 100%;">
+        <input type="text" id="activation-key-input" placeholder="e.g. XXXX-XXXX-XXXX" style="width: 100%; box-sizing: border-box; text-align: center; font-weight: 700; font-size: 1.1rem; letter-spacing: 1px; padding: 1rem; border: 2px solid var(--primary); border-radius: 12px; background: var(--input-bg); color: var(--text-primary); outline: none;">
+      </div>
+      
+      <p id="activation-error" style="color: #ef4444; font-size: 0.85rem; font-weight: 600; display: none; margin-bottom: 1.5rem; margin-top: 0.5rem;">
+        Invalid Activation Key. Access Denied.
+      </p>
+      
+      <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; width: 100%;">
+        <button onclick="closeActivationModal()" style="flex: 1; padding: 0.85rem; border: 1px solid var(--text-muted); border-radius: 8px; background: transparent; color: var(--text-secondary); cursor: pointer; font-weight: bold; font-family: 'Outfit';">Cancel</button>
+        <button onclick="verifyActivationKey()" style="flex: 1; padding: 0.85rem; border: none; border-radius: 8px; background: var(--primary); color: white; cursor: pointer; font-weight: bold; font-family: 'Outfit'; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">Unlock</button>
+      </div>
+    </div>
   </div>
 
   <script src="script.js"></script>
