@@ -1,6 +1,23 @@
 // Global data array
 let panicDatabase = [];
 
+// Browse Database Activation Settings
+let isDbUnlocked = false;
+
+// List of valid Activation Keys
+const VALID_ACTIVATION_KEYS = [
+  "MHTECH-8921-PA01",
+  "MHTECH-4732-PA02",
+  "MHTECH-9104-PA03",
+  "MHTECH-5528-PA04",
+  "MHTECH-1839-PA05",
+  "MHTECH-6274-PA06",
+  "MHTECH-3091-PA07",
+  "MHTECH-7415-PA08",
+  "MHTECH-2683-PA09",
+  "MHTECH-9540-PA10"
+];
+
 // Select elements
 const panicTypeSelect = document.getElementById('panic-type-select');
 const panicCodeSelect = document.getElementById('panic-code-select');
@@ -16,6 +33,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initOnlineUserCounter();
   initTheme();
   initPasteEventListener();
+  initActivationModal();
 });
 
 function initTheme() {
@@ -45,7 +63,26 @@ function toggleTheme() {
   }
 }
 
+function initActivationModal() {
+  const inputField = document.getElementById('activation-key-input');
+  if(inputField) {
+    inputField.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        verifyActivationKey();
+      }
+    });
+  }
+}
+
 function switchTab(tabId) {
+  // Activation Key Check for Database Tab via Modal
+  if (tabId === 'database-tab' && !isDbUnlocked) {
+    const modal = document.getElementById('activation-modal');
+    modal.style.display = 'flex';
+    document.getElementById('activation-key-input').focus();
+    return; // Stop tab from switching until unlocked
+  }
+
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
   if (activeBtn) activeBtn.classList.add('active');
@@ -70,20 +107,66 @@ function switchTab(tabId) {
   }
 }
 
+// Check the entered key
+function verifyActivationKey() {
+  const keyInput = document.getElementById('activation-key-input');
+  const errorMsg = document.getElementById('activation-error');
+  const userKey = keyInput.value.trim();
+  
+  if (userKey && VALID_ACTIVATION_KEYS.includes(userKey)) {
+    // Success
+    isDbUnlocked = true;
+    closeActivationModal();
+    // Switch to database tab automatically
+    switchTab('database-tab');
+  } else {
+    // Failure
+    errorMsg.style.display = 'block';
+    keyInput.classList.add('premium-pulse');
+    setTimeout(() => {
+      keyInput.classList.remove('premium-pulse');
+    }, 1000);
+  }
+}
+
+// Close the modal
+function closeActivationModal() {
+  document.getElementById('activation-modal').style.display = 'none';
+  document.getElementById('activation-error').style.display = 'none';
+  document.getElementById('activation-key-input').value = '';
+}
+
 function initOnlineUserCounter() {
   const onlineCountEl = document.getElementById('online-count');
   if (!onlineCountEl) return;
-  let currentCount = Math.floor(Math.random() * (850 - 180 + 1)) + 180;
+
+  function getCountLimits() {
+    const hour = new Date().getHours();
+    // Night Mode: 12 AM (0) to 9 AM (9) -> 1 to 100
+    if (hour >= 0 && hour < 9) {
+      return { min: 1, max: 100, fluc: 2, startMin: 1, startMax: 80 };
+    }
+    // Day Mode: Normal Logic
+    return { min: 115, max: 985, fluc: 6, startMin: 180, startMax: 850 };
+  }
+
+  const limits = getCountLimits();
+  let currentCount = Math.floor(Math.random() * (limits.startMax - limits.startMin + 1)) + limits.startMin;
+  
   onlineCountEl.textContent = currentCount;
 
   setInterval(() => {
-    const fluctuation = Math.floor(Math.random() * 14) - 6;
+    const currentLimits = getCountLimits();
+    const fluctuation = Math.floor(Math.random() * (currentLimits.fluc * 2 + 1)) - currentLimits.fluc;
     currentCount += fluctuation;
-    if (currentCount > 1000) currentCount = 985;
-    if (currentCount < 100) currentCount = 115;
+    
+    if (currentCount > currentLimits.max) currentCount = currentLimits.max - 2;
+    if (currentCount < currentLimits.min) currentCount = currentLimits.min + 2;
+    
     onlineCountEl.style.transform = 'scale(1.15)';
-    onlineCountEl.style.color = fluctuation > 0 ? '#34d399' : '#f87171';
+    onlineCountEl.style.color = fluctuation > 0 ? '#34d399' : (fluctuation < 0 ? '#f87171' : '');
     onlineCountEl.textContent = currentCount;
+    
     setTimeout(() => {
       onlineCountEl.style.transform = 'scale(1)';
       onlineCountEl.style.color = '';
@@ -495,9 +578,6 @@ function analyzeRawLog() {
   resultsWrapper.style.display = 'block';
   const foundMatches = [];
 
-  // =========================================================================
-  // NEW FUNCTION: ADVANCED DICTIONARY PATTERN MATCHING (Highly Accurate)
-  // =========================================================================
   const advancedDictionary = {
       "smc bsc failure": "Battery Data Line or Charging Port Flex",
       "t80t sbau": "Battery Data Line (T80T SBAU) error - Check Battery or Flex",
@@ -527,9 +607,6 @@ function analyzeRawLog() {
           }
       }
   }
-  // =========================================================================
-  // END ADVANCED DICTIONARY MATCHING
-  // =========================================================================
 
   panicDatabase.forEach(entry => {
     const errorCodeLower = entry.errorCode.toLowerCase();
@@ -602,7 +679,6 @@ function updateTableRowCount(count) { document.getElementById('db-row-count').te
 
 function loadLocalFallbackData() {
   const fallbackJson = [
-    // NEW: SMC BSC AND T80T SBAU ADDED TO FALLBACK DATA
     { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "SMC BSC failure", "Error Code": "T80T SBAU", "Solution": "Battery Data Line or Charging Port Flex" },
     { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "SMC BSC failure", "Error Code": "SMC BSC", "Solution": "Battery or Charging Port Flex" },
     { "Panic Type": "SMC PANIC - ASSERTION", "Panic Code": "Sensor array (1)", "Error Code": "0X80000", "Solution": "It\`s the Proximity Flex Cable" },
